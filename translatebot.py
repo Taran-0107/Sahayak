@@ -11,3 +11,5 @@ def translate_text(text, source="en",dest="hi"):
     return asyncio.run(translate_main(text,source,dest))
 
 #print(translate("hello dad"))
+if __name__=="__main__":
+    translate_text("hello world what's up")

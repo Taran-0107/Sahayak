@@ -47,7 +47,7 @@ def process_audio():
             audio = recognizer.record(source)
         
         try:
-            text = recognizer.recognize_google(audio, language='hi-IN')
+            text = recognizer.recognize_google(audio)
             return jsonify({"text": text})
         except sr.UnknownValueError:
             return jsonify({"text": "Could not understand audio"})
@@ -142,6 +142,48 @@ def logout():
     session.clear()
     return redirect(url_for('home'))  # Redirect to home after logout.
 
+
+@app.route('/get-user-info', methods=['GET'])
+def get_user_info():
+    """API endpoint to fetch user details."""
+    user_id=session["user_id"]
+    user_data = get_user(user_id)
+    if user_data:
+        print(user_data)
+        return jsonify(user_data)
+    return jsonify({"error": "User not found"}), 404
+
+@app.route('/update-user-info', methods=['POST'])
+def update_user_info():
+    """API endpoint to update user details."""
+    user_id=session["user_id"]
+    data = request.json
+    username = data.get("username")
+    email = data.get("email")
+    phone_number = data.get("phone_number")
+    dob = data.get("date_of_birth")
+    gender = data.get("gender")
+
+    conn = connect_db()
+    if conn:
+        cursor = conn.cursor()
+        query = """
+        UPDATE users 
+        SET username = %s, email = %s, phone_number = %s, date_of_birth = %s, gender = %s
+        WHERE id = %s
+        """
+        try:
+            cursor.execute(query, (username, email, phone_number, dob, gender, user_id))
+            conn.commit()
+            return jsonify({"message": "Profile updated successfully"})
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            return jsonify({"error": "Database update failed"}), 500
+        finally:
+            cursor.close()
+            conn.close()
+    return jsonify({"error": "Database connection failed"}), 500
+
 @app.route("/get_chats", methods=["POST"])
 def get_chats():
     """
@@ -172,8 +214,7 @@ def new_chat():
         return jsonify({"error": "User not logged in."}), 400
 
     # Generate a new unique chat ID
-    new_chat_id = session["chat_id"]+1   # Generates a unique chat ID (UUID)
-
+    new_chat_id = get_latest_free_chat_id(user_id)
     # Update the session with the new chat ID
     session["chat_id"] = new_chat_id
 

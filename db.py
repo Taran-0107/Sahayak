@@ -46,6 +46,28 @@ def create_user(username, email, phone_number, password_hash, dob, gender):
             cursor.close()
             conn.close()
 
+def get_user(user_id):
+    """Fetches user details from the database based on user_id."""
+    conn = connect_db()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        query = "SELECT username, email, phone_number, date_of_birth, gender FROM users WHERE id = %s"
+        try:
+            cursor.execute(query, (user_id,))
+            user = cursor.fetchone()
+            if user:
+                # Convert 'date_of_birth' from datetime.date to a string in 'YYYY-MM-DD' format
+                user["date_of_birth"] = user["date_of_birth"].strftime("%Y-%m-%d")
+                return user
+            return None
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+    return None
+
 def insert_chat(chat_id, user_id, message, sender):
     """Inserts a chat message into the chats table."""
     conn = connect_db()
@@ -309,6 +331,22 @@ def get_distinct_chat_ids(user_id):
     except mysql.connector.Error as e:
         print(f"Error: {e}")
         return []
+    
+def get_latest_free_chat_id(user_id):
+    """
+    Finds and returns the latest free chat ID for a given user, which is 1 greater than the highest chat ID.
+    """
+    # Fetch all distinct chat IDs for the user
+    chat_ids = get_distinct_chat_ids(user_id)
+
+    if chat_ids:
+        # Find the highest chat ID
+        highest_chat_id = max(chat_ids)
+        # Return the next available chat ID (one greater than the highest)
+        return highest_chat_id + 1
+    else:
+        # If no chat IDs exist for the user, return the first available ID (e.g., 1)
+        return 1
 
 def get_chats_by_chat_id_and_user_id(chat_id, user_id):
     """

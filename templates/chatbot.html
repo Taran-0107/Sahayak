@@ -20,9 +20,12 @@
 
 	<!-- SIDEBAR -->
 	<section id="sidebar">
-		<a href="{{ url_for('home') }}" class="brand">
+		<span class="brand">
+			<img src="static/logo3.png" alt="Logo" width="53">
 			<span class="text">Sahayak</span>
-		</a>
+		  </span>		  
+		  
+		  
 		<ul class="side-menu">
 			<li class="active">
 				<a href="{{ url_for('welcome') }}">
@@ -31,25 +34,19 @@
 				</a>
 			</li>
 		</ul>
-		<form action="{{ url_for('search') }}" method="get">
-			<div class="form-input">
-				<input type="search" name="q" placeholder="Search...">
-				<button type="submit" class="search-btn"><i class="bx bx-search"></i></button>
-			</div>
-		</form>
 		<div id="chat-names-container">
 		</div>
 		<button id="new-chat-button" class="chat-buttons">
-			<i class="bx bx-comment-add"></i>
+			<span class="material-icons nav-icon">add</span>
 		</button>
 		<button id="delete-chat-button" class="chat-buttons">
-			<i class="bx bx-comment-x"></i>
+			<span class="material-icons nav-icon">cancel</span>
 		</button>
 		<ul class="side-menubot">
 			<li>
-				<a href="{{ url_for('settings') }}">
-					<i class="bx bxs-cog"></i>
-					<span class="text">Settings</span>
+				<a href="{{ url_for('profile') }}">
+					<i class="bx bxs-user"></i>
+					<span class="text">Profile</span>
 				</a>
 			</li>
 			<li>
@@ -86,7 +83,7 @@
 				<span class="num">8</span>
 			</a>
 			<a href="{{ url_for('profile') }}" class="profile">
-				<i class="icon material-icons">settings</i>
+				<i class="icon material-icons">person</i>
 			</a>
 		</nav>
 		<!-- NAVBAR -->
@@ -126,17 +123,7 @@
 
 			micButton.addEventListener("click", async () => {
 				console.log("mic daba dia abe");
-				if (!isRecording) {
-					// Start recording
-					const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-					mediaRecorder = new MediaRecorder(stream);
-					audioChunks = [];
-
-					mediaRecorder.ondataavailable = (event) => {
-						audioChunks.push(event.data);
-					};
-
-					mediaRecorder.onstop = async () => {
+						document.getElementById("query-input").value = "recording your voice, speak up....";
 						const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
 						const formData = new FormData();
 						formData.append("audio", audioBlob);
@@ -148,16 +135,8 @@
 						});
 
 						const result = await response.json();
-						document.getElementById("transcription").innerText = "Transcription: " + result.text;
-					};
-
-					mediaRecorder.start();
-					isRecording = true;
-				} else {
-					// Stop recording
-					mediaRecorder.stop();
-					isRecording = false;
-				}
+						document.getElementById("query-input").value = result.text;
+	
 			});
 
 
@@ -175,6 +154,7 @@
 
 
 			await fetchChatIds();
+			await startNewChat();
 
 			newchatButton.addEventListener("click",async ()=>{
 				await startNewChat();
@@ -200,6 +180,8 @@
 					document.getElementById("chat-container").appendChild(loadingBubble);
 
 					// Send the query to the server using fetch
+					queryInput.value = "";
+					
 					await fetch("/assistant", {
 						method: "POST",
 						headers: {
@@ -220,8 +202,7 @@
 						scroll_chat_to_bottom();
 
 						// Clear the input field
-						queryInput.value = "";
-						fetchChatIds();
+						
 					})
 					.catch(error => {
 						console.error("Error:", error);
@@ -423,7 +404,8 @@
 					// Get the chat container
 
 					var chatId= data.chat_id
-					create_chat_item(chatId);
+					highlightSelectedChat(create_chat_item(chatId));
+
 
 				} catch (error) {
 					console.error("Error starting new chat:", error);

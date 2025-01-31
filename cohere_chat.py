@@ -29,8 +29,8 @@ def fetch_response(client,messages):
 if __name__ =="__main__":
 
     c=init_client()
-
-    t=fetch_response(c,"tell me about water")
+    prompt="tell me about water"
+    t=fetch_response(c,[{"role":"user","content":prompt}])
 
     # print("______________-sepertor______________")
 
