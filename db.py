@@ -5,7 +5,7 @@ from datetime import datetime
 DB_CONFIG = {
     "host": "localhost",      # Change if using a remote server
     "user": "root",           # Change to your MySQL username
-    "password": "Reapercreeper399", # Change to your MySQL password
+    "password": "Reapercreeper399",# Change to your MySQL password
     "database": "UserDB"
 }
 
@@ -258,6 +258,48 @@ def get_user_events(user_id):
             conn.close()
 
     return events_data
+
+
+def get_user_events_today(user_id):
+    """Fetches all events for a specific user that are scheduled for the current day."""
+    conn = connect_db()
+    events_data = []
+    
+    if conn:
+        cursor = conn.cursor()
+        query = """
+            SELECT event_id, event_name, timestamp, duration, color, description, everyYear
+            FROM events
+            WHERE user_id = %s AND DATE(timestamp) = CURDATE()
+            ORDER BY timestamp ASC
+        """
+        try:
+            cursor.execute(query, (user_id,))
+            events = cursor.fetchall()
+
+            if events:
+                for event in events:
+                    event_details = {
+                        "event_id": event[0],
+                        "event_name": event[1],
+                        "timestamp": event[2].strftime('%Y-%m-%d %H:%M:%S'),
+                        "duration": event[3],
+                        "color": event[4],
+                        "description": event[5] if event[5] else "",
+                        "everyYear": event[6]
+                    }
+                    events_data.append(event_details)
+            else:
+                print(f"No events found for user {user_id} today.")
+
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+        finally:
+            cursor.close()
+            conn.close()
+
+    return events_data
+
 
 def get_user_id(username):
     """

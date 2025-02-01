@@ -59,6 +59,38 @@ body {
     overflow-y: auto; /*  scrolling */
 }
 
+.notifi-box {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    width: 300px;
+	max-height: 400px; 
+    background: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 10px;
+    display: none;
+    z-index: 3000;
+	overflow-y: auto;
+}
+
+.notifi-box.active {
+    display: block;
+}
+
+.notifi-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.notifi-item img {
+    width: 40px;
+    margin-right: 10px;
+    border-radius: 50%;
+}
+
 
 .background{
     position: absolute;
@@ -212,24 +244,39 @@ body {
 }
 
 #content nav .notification {
-	font-size: 27px;
-	position: absolute; /* Position it relative to the navbar */
-	right: 55px; /* Adjust based on the desired distance from the right edge */
+    position: absolute;
+    right: 55px; /* Adjust to align with profile */
+    top: 50%; /* Align vertically */
+    transform: translateY(-50%); /* Center vertically */
+    width: 36px; /* Match profile icon size */
+    height: 36px; /* Match profile icon size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--grey); /* Background to match profile */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#content nav .notification:hover {
+    background: var(--dark-grey);
 }
 
 #content nav .notification .num {
-	position: absolute;
-	top: -5px; /* Adjust to position the notification number */
-	right: -5px; /* Adjust to position the notification number */
-	background-color: var(--red);
-	color: white;
-	border-radius: 50%;
-	width: 18px;
-	height: 18px;
-	font-size: 12px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
+    position: absolute;
+    top: -5px; /* Adjust for better placement */
+    right: -5px;
+    background-color: var(--red);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
 }
 
 #content nav .profile {

@@ -23,6 +23,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     const cardWidth = document.querySelector('.card__article').offsetWidth +4+16+16; // card width + margin
     const totalCards = document.querySelectorAll('.card__article').length;
 
+    const updateCenterCard = () => {
+        // Remove existing "center-card" classes
+        document.querySelectorAll('.card__article').forEach((card) => {
+            card.classList.remove('center-card');
+        });
+
+        // Find and add "center-card" class to the center card
+        const centerIndex = currentIndex + Math.floor(toatlcardsatonce / 2);
+        const centerCard = document.querySelectorAll('.card__article')[centerIndex];
+        if (centerCard) {
+            centerCard.classList.add('center-card');
+        }
+    };
+
+    // Function to move cards
+    const moveCards = () => {
+        const maxIndex = totalCards - toatlcardsatonce;
+        currentIndex = Math.max(0, Math.min(currentIndex, maxIndex)); // Keep within bounds
+        cardContainer.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        updateCenterCard(); // Update the center card
+    };
+
     // Add total cards based on the HTML structure
     nextBtn.addEventListener('click', () => {
         console.log("clicked button2");
@@ -33,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             currentIndex = 0;  // Loop back to the first card
         }
         cardContainer.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        moveCards();
     });
     
     prevBtn.addEventListener('click', () => {
@@ -44,13 +67,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             currentIndex = totalCards - 3;  // Loop back to the last card
         }
         cardContainer.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        moveCards();
     });
 
-
-
-
+    moveCards();
 
 });
+
 
 
 

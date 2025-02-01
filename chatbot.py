@@ -6,7 +6,6 @@ bot_memory=10
 co=init_client()
 
 def chat(user_id,chat_id,prompt):
-
     messages=fetch_chat_history_rts(user_id,chat_id,bot_memory)
     messages.append({"role":"user","content":prompt})
     response_text=fetch_response(co,messages)

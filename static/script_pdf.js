@@ -213,13 +213,8 @@ function openSideMenu() {
 }
 
 document.getElementById("summarize-button").addEventListener("click", async function () {
+    const summaryTextBox = document.getElementById("summary-text-box");
     const summaryView = document.getElementById("summary-view");
-
-    if (!pdfDoc) {
-        alert("No PDF loaded.");
-        return;
-    }
-
     const fileInput = document.getElementById("pdfFile");
     const file = fileInput.files[0];
 
@@ -235,17 +230,15 @@ document.getElementById("summarize-button").addEventListener("click", async func
     reader.onload = async function () {
         const pdfData = new Uint8Array(reader.result);
 
-        // Show loading text
-        openSideMenu();
-
-        summaryView.innerHTML = "<p>Summarizing... ⏳</p>";
+        // Show loading message and open the summary view
+        summaryTextBox.innerHTML = "<p>Summarizing... ⏳</p>";
+        summaryTextBox.classList.add("has-content");
+        summaryView.classList.add("open");
 
         try {
             const response = await fetch("/summarize", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/pdf",
-                },
+                headers: { "Content-Type": "application/pdf" },
                 body: pdfData,
             });
 
@@ -254,27 +247,30 @@ document.getElementById("summarize-button").addEventListener("click", async func
             }
 
             const data = await response.json();
+            console.log("Summary Response:", data);
 
-            // Update the summary menu with the response
-            summaryView.innerHTML = `<p>${data.summary}</p>`;
-
-
+            // Update the summary box content
+            if (data.summary && data.summary.trim()) {
+                summaryTextBox.innerHTML = `<p>${data.summary}</p>`;
+                summaryTextBox.classList.add("has-content");
+            } else {
+                summaryTextBox.innerHTML = "<p>No summary returned.</p>";
+                summaryTextBox.classList.remove("has-content");
+                summaryView.classList.remove("open"); // Close if no content
+            }
 
         } catch (error) {
-            summaryView.innerHTML = "<p>Error summarizing PDF.</p>";
+            summaryTextBox.innerHTML = "<p>Error summarizing PDF.</p>";
+            summaryTextBox.classList.remove("has-content");
+            summaryView.classList.remove("open"); // Close if an error occurs
             console.error("Error:", error);
         }
     };
 });
 
 document.getElementById("translate-button").addEventListener("click", async function () {
+    const summaryTextBox = document.getElementById("summary-text-box");
     const summaryView = document.getElementById("summary-view");
-
-    if (!pdfDoc) {
-        alert("No PDF loaded.");
-        return;
-    }
-
     const fileInput = document.getElementById("pdfFile");
     const file = fileInput.files[0];
 
@@ -290,17 +286,15 @@ document.getElementById("translate-button").addEventListener("click", async func
     reader.onload = async function () {
         const pdfData = new Uint8Array(reader.result);
 
-        // Show loading text
-        openSideMenu();
-        
-        summaryView.innerHTML = "<p>Translating... ⏳</p>";
+        // Show loading message and open the summary view
+        summaryTextBox.innerHTML = "<p>Translating... ⏳</p>";
+        summaryTextBox.classList.add("has-content");
+        summaryView.classList.add("open");
 
         try {
             const response = await fetch("/translate_pdf", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/pdf",
-                },
+                headers: { "Content-Type": "application/pdf" },
                 body: pdfData,
             });
 
@@ -309,14 +303,22 @@ document.getElementById("translate-button").addEventListener("click", async func
             }
 
             const data = await response.json();
+            console.log("Translation Response:", data);
 
-            // Update the summary menu with the response
-            summaryView.innerHTML = `<p>${data.summary}</p>`;
-
-
+            // Update the summary box content
+            if (data.summary && data.summary.trim()) {
+                summaryTextBox.innerHTML = `<p>${data.summary}</p>`;
+                summaryTextBox.classList.add("has-content");
+            } else {
+                summaryTextBox.innerHTML = "<p>No translation returned.</p>";
+                summaryTextBox.classList.remove("has-content");
+                summaryView.classList.remove("open"); // Close if no content
+            }
 
         } catch (error) {
-            summaryView.innerHTML = "<p>Error translating</p>";
+            summaryTextBox.innerHTML = "<p>Error translating PDF.</p>";
+            summaryTextBox.classList.remove("has-content");
+            summaryView.classList.remove("open"); // Close if an error occurs
             console.error("Error:", error);
         }
     };

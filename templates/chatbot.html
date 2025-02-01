@@ -77,11 +77,20 @@
 				<span class="material-icons nav-icon">description</span> Summary
 			</button>
 			
-			</button>
-			<a href="{{ url_for('notifications') }}" class="notification">
-				<i class="bx bxs-bell"></i>
-				<span class="num">8</span>
-			</a>
+			
+			<!-- Notification Bell -->
+			<div class="icon" onclick="toggleNotifi()">
+				<a class="notification">
+					<i class="bx bxs-bell"></i>
+					<span class="num" id="notifspan"></span>
+				</a>
+			</div>
+
+			 <!-- Notification Box -->
+			 <div class="notifi-box" id="box">
+				<h2>Notifications <span >17</span></h2>
+			</div>
+
 			<a href="{{ url_for('profile') }}" class="profile">
 				<i class="icon material-icons">person</i>
 			</a>
@@ -96,7 +105,11 @@
 
 			<!-- User Input Form -->
 			<div id="assistant-container">
+				<button id="search-web-button" class="search-btn long-btn">
+					<i class="bx bx-search-alt-2"></i> Search the Web
+				</button>
 				<div class="assistant-bar">
+
 					<textarea id="query-input" placeholder="Your assistant is ready—what’s the plan?" rows="3" required></textarea>
 					<button id="submit-button" class="search-btn"><i class="bx bx-send"></i></button>
 					<button id="mic-button" class="search-btn"><i class="bx bx-microphone"></i></button>
@@ -106,6 +119,7 @@
 		</main>
 	</section>
 	<!-- CONTENT -->
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<script type="text/javascript">
 		window.onload = function() {
 			if (!document.referrer || document.referrer.includes("logout")) {
@@ -113,31 +127,75 @@
 			}
 		};
 
+		function formatResponse(text) {
+			return marked.parse(text);
+		}
+
 		document.addEventListener("DOMContentLoaded", () => {
 			const micButton = document.getElementById("mic-button");
-			console.log("page load ho gya bsdk")
-
+			const micOnGradient ="linear-gradient(to right, #ff5733, #ffbd69)";
+			const micOffGradient="linear-gradient(to right, #00004c, #0f0f8c)";
+			console.log("page load ho gya")
+			let isRecording = false;
 			let mediaRecorder;
 			let audioChunks = [];
-			let isRecording = false; // Toggle state
+			const queryInput = document.getElementById("query-input");
 
-			micButton.addEventListener("click", async () => {
-				console.log("mic daba dia abe");
-						document.getElementById("query-input").value = "recording your voice, speak up....";
-						const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-						const formData = new FormData();
-						formData.append("audio", audioBlob);
+			async function enableRecording() {
+				if (!isRecording) {
+					// Start recording
+					micButton.style.background = micOnGradient;
+					queryInput.value = "";
+					queryInput.placeholder = "Recording your voice, speak up....";
+					audioChunks = [];
 
-						// Send audio to Flask backend
-						const response = await fetch("/process_audio", {
-							method: "POST",
-							body: formData
-						});
+					try {
+						const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+						mediaRecorder = new MediaRecorder(stream);
 
-						const result = await response.json();
-						document.getElementById("query-input").value = result.text;
-	
-			});
+						mediaRecorder.ondataavailable = event => {
+							if (event.data.size > 0) {
+								audioChunks.push(event.data);
+							}
+						};
+
+						mediaRecorder.onstop = async () => {
+							micButton.style.background = micOffGradient;
+							queryInput.placeholder = "Processing audio, please wait...";
+
+							const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+							const formData = new FormData();
+							formData.append("audio", audioBlob);
+
+							try {
+								const response = await fetch("/process_audio", {
+									method: "POST",
+									body: formData
+								});
+
+								const result = await response.json();
+								queryInput.placeholder = "Your assistant is ready—what’s the plan?";
+								queryInput.value = result.text;
+							} catch (error) {
+								console.error("Error processing audio:", error);
+								queryInput.placeholder = "Error processing audio.";
+							}
+						};
+
+						mediaRecorder.start();
+						isRecording = true;
+					} catch (error) {
+						console.error("Error accessing microphone:", error);
+						queryInput.placeholder = "Error accessing microphone.";
+					}
+				} else {
+					// Stop recording
+					isRecording = false;
+					mediaRecorder.stop();
+				}
+			}
+
+			micButton.addEventListener("click", enableRecording);
 
 
 
@@ -169,8 +227,8 @@
 				if (query) {
 					// Add user message bubble
 					const userMessage = document.createElement("div");
-					userMessage.className = "user-message";
-					userMessage.textContent = query;
+					userMessage.className = "user-message chatmsg";
+					userMessage.innerHTML = formatResponse(query);
 					document.getElementById("chat-container").appendChild(userMessage);
 
 					// Add loading bubble
@@ -196,8 +254,8 @@
 
 						// Add bot message bubble
 						const botMessage = document.createElement("div");
-						botMessage.className = "bot-message";
-						botMessage.textContent = data.response;
+						botMessage.className = "bot-message chatmsg";
+						botMessage.innerHTML = formatResponse(data.response);
 						document.getElementById("chat-container").appendChild(botMessage);
 						scroll_chat_to_bottom();
 
@@ -365,12 +423,12 @@
 
 						if (chat.sender === "user") {
 							// Display user messages
-							chatMessage.className = "user-message";
-							chatMessage.textContent = chat.message;
+							chatMessage.className = "user-message chatmsg";
+							chatMessage.innerHTML = formatResponse(chat.message);
 						} else {
 							// Display bot messages
-							chatMessage.className = "bot-message";
-							chatMessage.textContent = chat.message;
+							chatMessage.className = "bot-message chatmsg";
+							chatMessage.innerHTML = formatResponse(chat.message);
 						}
 
 						chatContainer.appendChild(chatMessage);
@@ -451,6 +509,54 @@
         function eventspage(){
             window.location.href = '{{ url_for("events") }}';
         }
+
+		// document.querySelector(".notification").addEventListener("click", function (event) {
+		// 	console.log("notif clicked")
+		// 	event.stopPropagation(); // Prevent click from propagating to document
+		// 	var notifiBox = document.querySelector(".notifi-box");
+		// 	notifiBox.classList.toggle("active");
+		// });
+
+		// // Hide Notification Box when clicking outside
+		// document.addEventListener("click", function (event) {
+		// 	var notifiBox = document.querySelector(".notifi-box");
+		// 	var notificationIcon = document.querySelector(".notification");
+
+		// 	// Check if the clicked element is not inside the notification box or the icon
+		// 	if (!notifiBox.contains(event.target) && !notificationIcon.contains(event.target)) {
+		// 		notifiBox.classList.remove("active");
+		// 	}
+		// });
+		// document.addEventListener("DOMContentLoaded", function () {
+		// 	fetchTodayEvents();
+		// });
+
+	// function fetchTodayEvents() {
+		
+	// 	fetch(`/get_today_events`)
+	// 		.then(response => response.json())
+	// 		.then(data => {
+	// 			const box = document.getElementById("box");
+	// 			box.innerHTML = `<h2>Today's Events <span>${data.length}</span></h2>`; // Update count
+				
+	// 			data.forEach(event => {
+	// 				const item = document.createElement("div");
+	// 				item.classList.add("notifi-item");
+
+	// 				item.innerHTML = `
+	// 					<img src="static/logo3.png" alt="img">
+	// 					<div class="text" style="border-left: 5px solid ${event.color}; padding-left: 10px;">
+	// 						<h4>${event.event_name}</h4>
+	// 						<p>${event.timestamp} - ${event.description}</p>
+	// 					</div>
+	// 				`;
+	// 				box.appendChild(item);
+	// 			});
+	// 		})
+	// 		.catch(error => console.error("Error fetching today's events:", error));
+	// }
+				
+
 	</script>
 	<script src="{{ url_for('static', filename='script_cb.js') }}"></script>
 </body>

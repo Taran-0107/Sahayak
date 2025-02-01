@@ -2,8 +2,8 @@ from flask import Flask, render_template,redirect,url_for,request,jsonify,sessio
 from chatbot import chat
 from news import *
 from db import *
-import wave
-import sounddevice as sd
+import subprocess
+
 from pdf_reader import *
 import speech_recognition as sr
 from datetime import datetime, timedelta
@@ -23,43 +23,55 @@ def home():
 
 @app.route('/process_audio', methods=['POST'])
 def process_audio():
-    print("Recording audio...")
-    
-    duration = 5  # seconds
-    sample_rate = 44100  # Hz
-    
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio file received"}), 400
+
+    audio_file = request.files["audio"]
+
     try:
-        audio_data = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype='int16')
-        sd.wait()
-        print("Audio recorded successfully")
-    
-        # Convert to WAV format in memory
+        # Convert OPUS to WAV using ffmpeg
         wav_buffer = io.BytesIO()
-        with wave.open(wav_buffer, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)  # 16-bit PCM
-            wf.setframerate(sample_rate)
-            wf.writeframes(audio_data.tobytes())
+        # Use subprocess to call ffmpeg and convert the file
+        process = subprocess.Popen(
+            ['ffmpeg', '-i', 'pipe:0', '-f', 'wav', 'pipe:1'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         
+        # Write the audio data to ffmpeg's stdin
+        stdout, stderr = process.communicate(input=audio_file.read())
+
+        if process.returncode != 0:
+            return jsonify({"error": f"FFmpeg error: {stderr.decode()}"}), 500
+        
+        wav_buffer.write(stdout)
         wav_buffer.seek(0)
+
+        # Recognize speech from the converted WAV file
         recognizer = sr.Recognizer()
         with sr.AudioFile(wav_buffer) as source:
-            audio = recognizer.record(source)
-        
+            audio_data = recognizer.record(source)
+
         try:
-            text = recognizer.recognize_google(audio)
+            text = recognizer.recognize_google(audio_data)
             return jsonify({"text": text})
         except sr.UnknownValueError:
             return jsonify({"text": "Could not understand audio"})
         except sr.RequestError:
             return jsonify({"text": "Error with speech recognition service"})
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
 
 @app.route('/aboutus')
 def aboutus():
     return render_template('aboutus.html')
+
+@app.route('/get_today_events')
+def get_today_events():
+    user_id = session["user_id"]  # Get user_id from request
+    events = get_user_events_today(user_id)  # Fetch today's events
+    return jsonify(events)
 
 @app.route('/chatbot')
 def chatbot():
@@ -434,4 +446,4 @@ async def fetchnews():
     return jsonify({'newslist': newslist})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
