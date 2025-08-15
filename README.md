@@ -1,6 +1,4 @@
-# Update the README.md content to include the Calendar Page feature
-
-updated_readme_content = """# Sahayak — AI-Powered Assistant for Bureaucrats
+# Sahayak — AI-Powered Assistant for Bureaucrats
 
 **🏆 Built at IIT Kharagpur Hackathon**  
 
