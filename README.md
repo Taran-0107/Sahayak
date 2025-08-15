@@ -49,6 +49,7 @@ From keeping up with the latest news to summarizing important documents in any l
 - Python 3.9+
 - Cohere API key
 - Tesseract OCR installed on your system
+- ffmpeg installed on your system
 
 ### Installation
 
